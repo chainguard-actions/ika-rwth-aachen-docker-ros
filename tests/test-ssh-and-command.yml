@@ -1,0 +1,26 @@
+name: Test SSH and command inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          base-image: ubuntu:22.04
+          ros-distro: humble
+          command: "ros2 launch my_package my_launch.py"
+          git-ssh-known-host-keys: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC"
+          git-ssh-private-key: ""
+          target: run
+          enable-checkout: "false"
+          enable-slim: "false"
+          enable-industrial-ci: "false"
+          registry: ghcr.io
+          registry-user: testuser
+          registry-password: testpassword

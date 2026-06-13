@@ -1,0 +1,27 @@
+name: Test basic usage with ROS inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          base-image: ubuntu:22.04
+          ros-distro: humble
+          platform: amd64
+          dev-image-tag: dev-test
+          slim-image-tag: slim-test
+          image-tag: test
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          enable-industrial-ci: "false"
+          registry: ghcr.io
+          registry-user: testuser
+          registry-password: testpassword
