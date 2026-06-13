@@ -8,6 +8,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 | Version | Tag | Upstream commit |
 |---------|-----|-----------------|
+| v1.8.1 | [`v1.8.1`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.8.1) | [`4b5d421`](https://github.com/ika-rwth-aachen/docker-ros/commit/4b5d4211c0f849516f490218dbdcfd270c69dbaf) |
 | v1.9.0 | [`v1.9.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.9.0) | [`a62e418`](https://github.com/ika-rwth-aachen/docker-ros/commit/a62e418621a0391e133b9fcf01cc4b3717f3eec6) |
 
 ## Privacy
