@@ -1,0 +1,138 @@
+#!/bin/bash
+
+set -e
+
+ROOT_PATH="$(realpath "$(cd -P "$(dirname "${0}")" && pwd)"/..)"
+source "${ROOT_PATH}/scripts/build.sh"
+source "${ROOT_PATH}/scripts/utils.sh"
+
+
+# check for required variables and set defaults for optional variables
+TARGET="${TARGET:-run}"
+PLATFORM="${PLATFORM:-$(dpkg --print-architecture)}"
+require_var "BASE_IMAGE"
+require_var "IMAGE_NAME"
+IMAGE_TAG="${IMAGE_TAG:-latest}"
+[[ "${TARGET}" == *"run"* ]] && require_var "COMMAND"
+DEV_IMAGE_NAME="${DEV_IMAGE_NAME:-${IMAGE_NAME}}"
+DEV_IMAGE_TAG="${DEV_IMAGE_TAG:-${IMAGE_TAG}-dev}"
+SLIM_IMAGE_NAME="${SLIM_IMAGE_NAME:-${IMAGE_NAME}}"
+SLIM_IMAGE_TAG="${SLIM_IMAGE_TAG:-${IMAGE_TAG}-slim}"
+
+ADDITIONAL_DEBS_FILE="${ADDITIONAL_DEBS_FILE:-}"
+ADDITIONAL_FILES_DIR="${ADDITIONAL_FILES_DIR:-}"
+ADDITIONAL_PIP_FILE="${ADDITIONAL_PIP_FILE:-}"
+ADDITIONAL_SLIM_BUILD_ARGS="${ADDITIONAL_SLIM_BUILD_ARGS:-}"
+AFTER_DEPENDENCY_INSTALLATION_SCRIPT="${AFTER_DEPENDENCY_INSTALLATION_SCRIPT:-}"
+BEFORE_DEPENDENCY_IDENTIFICATION_SCRIPT="${BEFORE_DEPENDENCY_IDENTIFICATION_SCRIPT:-}"
+BEFORE_DEPENDENCY_INSTALLATION_SCRIPT="${BEFORE_DEPENDENCY_INSTALLATION_SCRIPT:-}"
+BLACKLISTED_PACKAGES_FILE="${BLACKLISTED_PACKAGES_FILE:-}"
+CMAKE_ARGS="${CMAKE_ARGS:-}"
+BUILDX_ATTESTATIONS="${BUILDX_ATTESTATIONS:-false}"
+DEV_IMAGE="${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}"
+DISABLE_ROS_INSTALLATION="${DISABLE_ROS_INSTALLATION:-}"
+ENABLE_RECURSIVE_ADDITIONAL_DEBS="${ENABLE_RECURSIVE_ADDITIONAL_DEBS:-}"
+ENABLE_RECURSIVE_ADDITIONAL_PIP="${ENABLE_RECURSIVE_ADDITIONAL_PIP:-}"
+ENABLE_RECURSIVE_AFTER_DEPENDENCY_INSTALLATION_SCRIPT="${ENABLE_RECURSIVE_AFTER_DEPENDENCY_INSTALLATION_SCRIPT:-}"
+ENABLE_RECURSIVE_BEFORE_DEPENDENCY_INSTALLATION_SCRIPT="${ENABLE_RECURSIVE_BEFORE_DEPENDENCY_INSTALLATION_SCRIPT:-}"
+ENABLE_RECURSIVE_BLACKLISTED_PACKAGES="${ENABLE_RECURSIVE_BLACKLISTED_PACKAGES:-}"
+ENABLE_RECURSIVE_VCS_IMPORT="${ENABLE_RECURSIVE_VCS_IMPORT:-}"
+ENABLE_SINGLEARCH_PUSH="${ENABLE_SINGLEARCH_PUSH:-false}"
+ENABLE_SLIM="${ENABLE_SLIM:-true}"
+GIT_HTTPS_PASSWORD="${GIT_HTTPS_PASSWORD:-}"
+GIT_HTTPS_SERVER="${GIT_HTTPS_SERVER:-}"
+GIT_HTTPS_USER="${GIT_HTTPS_USER:-}"
+GIT_SSH_KNOWN_HOST_KEYS="${GIT_SSH_KNOWN_HOST_KEYS:-}"
+GIT_SSH_PRIVATE_KEY="${GIT_SSH_PRIVATE_KEY:-}"
+IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+RMW_IMPLEMENTATION="${RMW_IMPLEMENTATION:-}"
+ROS_DISTRO="${ROS_DISTRO:-}"
+SLIM_BUILD_ARGS="${SLIM_BUILD_ARGS:-'--sensor-ipc-mode proxy \
+--continue-after=30 \
+--show-clogs \
+--http-probe=false \
+--env DOCKER_UID=23456 \
+--env DOCKER_GID=23456 \
+--env DOCKER_USER=dockerslimprobe \
+--include-path /opt/ros \
+--include-path /docker-ros/ws/install \
+--include-path /etc/ld.so.cache \
+--include-path /etc/ld.so.conf \
+--include-path /etc/ld.so.conf.d \
+--preserve-path /etc/passwd \
+--preserve-path /etc/group \
+--preserve-path /etc/shadow \
+--preserve-path /etc/gshadow \
+--exclude-pattern /home/dockerslimprobe \
+--exclude-pattern /home/dockerslimprobe/** \
+--exclude-pattern /var/mail/dockerslimprobe'}"
+SLIM_IMAGE="${SLIM_IMAGE_NAME}:${SLIM_IMAGE_TAG}"
+VCS_IMPORT_FILE="${VCS_IMPORT_FILE:-}"
+_ENABLE_IMAGE_PUSH="${_ENABLE_IMAGE_PUSH:-false}"
+_IMAGE_POSTFIX="${_IMAGE_POSTFIX:-""}"
+
+# write image name for industrial_ci to output (GitHub-only)
+if [[ -n "${GITHUB_ACTIONS}" ]]; then
+    industrial_ci_image="${IMAGE}"
+    [[ "${TARGET}" == *"dev"* ]] && industrial_ci_image="${DEV_IMAGE}"
+    [[ -n "${_IMAGE_POSTFIX}" ]] && industrial_ci_image="${industrial_ci_image}${_IMAGE_POSTFIX}"
+    if [[ "${PLATFORM}" != *","* ]]; then
+        industrial_ci_image="${industrial_ci_image}-${PLATFORM}"
+    else
+        industrial_ci_image="${industrial_ci_image}-$(dpkg --print-architecture)"
+    fi
+    safe_industrial_ci_image="$(printf '%s' "${industrial_ci_image}" | tr -d '\n\r')"
+    echo "INDUSTRIAL_CI_IMAGE=${safe_industrial_ci_image}" >> "${GITHUB_OUTPUT}"
+fi
+
+# parse (potentially) comma-separated lists to arrays
+IFS="," read -ra TARGETS <<< "${TARGET}"
+if [[ "${_ENABLE_IMAGE_PUSH}" != "true" || "${ENABLE_SINGLEARCH_PUSH}" == "true" ]]; then
+    IFS="," read -ra PLATFORMS <<< "${PLATFORM}"
+else
+    PLATFORMS=( "${PLATFORM}" )
+fi
+unset TARGET
+unset PLATFORM
+
+# loop over targets and platforms to build images
+for PLATFORM in "${PLATFORMS[@]}"; do
+    for TARGET in "${TARGETS[@]}"; do
+        open_log_group "Build ${TARGET} image (${PLATFORM})"
+        image="${IMAGE}"
+        [[ "${TARGET}" == "dev" ]] && image="${DEV_IMAGE}"
+        [[ -n "${_IMAGE_POSTFIX}" ]] && image="${image}${_IMAGE_POSTFIX}"
+        [[ "${_ENABLE_IMAGE_PUSH}" != "true" || "${ENABLE_SINGLEARCH_PUSH}" == "true" ]] && image="${image}-${PLATFORM}"
+        IMAGE="${image}" build_image
+        close_log_group
+    done
+
+    # slim image
+    if [[ "${ENABLE_SLIM}" == "true" && "${TARGET}" == "run" && ${_ENABLE_IMAGE_PUSH} == "true" ]]; then
+        open_log_group "Slim image (${PLATFORM})"
+        image="${IMAGE}"
+        slim_image="${SLIM_IMAGE}"
+        [[ -n "${_IMAGE_POSTFIX}" ]] && image="${image}${_IMAGE_POSTFIX}"
+        [[ -n "${_IMAGE_POSTFIX}" ]] && slim_image="${slim_image}${_IMAGE_POSTFIX}"
+        [[ "${ENABLE_SINGLEARCH_PUSH}" == "true" ]] && image="${image}-${PLATFORM}"
+        [[ "${ENABLE_SINGLEARCH_PUSH}" == "true" ]] && slim_image="${slim_image}-${PLATFORM}"
+        mint_base_url="https://github.com/mintoolkit/mint/releases/download/1.41.8"
+        if [[ "$(dpkg --print-architecture)" == "arm64" ]]; then
+            mint_download_url="${mint_base_url}/dist_linux_arm64.tar.gz"
+        else
+            mint_download_url="${mint_base_url}/dist_linux.tar.gz"
+        fi
+        curl -L -o ds.tar.gz "${mint_download_url}"
+        tar -xvf ds.tar.gz
+        cd dist_linux*
+        export DOCKER_API_VERSION="${DOCKER_API_VERSION:-$(docker version --format '{{.Server.APIVersion}}')}"
+        docker pull "${image}"
+        IFS=' ' read -ra _slim_build_args <<< "${SLIM_BUILD_ARGS}"
+        IFS=' ' read -ra _additional_slim_build_args <<< "${ADDITIONAL_SLIM_BUILD_ARGS}"
+        ./mint slim --target "${image}" --tag "${slim_image}" "${_slim_build_args[@]}" "${_additional_slim_build_args[@]}"
+        docker push "${slim_image}"
+        cd -
+        rm -rf dist_linux* ds.tar.gz
+        close_log_group
+    fi
+done

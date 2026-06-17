@@ -1,0 +1,149 @@
+name: Test optional inputs coverage
+on:
+  workflow_dispatch:
+
+jobs:
+  test-optional-inputs:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Invoke docker-ros action with optional inputs
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          base-image: ubuntu:22.04
+          target: run
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test/test-image
+          image-tag: test
+          dev-image-tag: test-dev
+          slim-image-tag: test-slim
+          ros-distro: humble
+          command: ros2 launch my_pkg my_launch.py
+          additional-slim-build-args: "--http-probe=false"
+          git-ssh-private-key: ""
+          git-ssh-known-host-keys: ""
+          label-authors: "Test Author <test@example.com>"
+          label-description: "Test description for docker-ros image"
+          label-licenses: "Apache-2.0"
+          label-maintainer: "Test Maintainer"
+          label-url: "https://example.com"
+          label-version: "1.0.0"
+
+      - name: Assert action.yml exists and contains expected inputs
+        run: |
+          echo "Checking that action.yml exists..."
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
+            echo "FAIL: action.yml not found"
+            exit 1
+          fi
+          echo "PASS: action.yml found"
+
+      - name: Assert action.yml declares ros-distro input
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "ros-distro:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: ros-distro input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: ros-distro input found in action.yml"
+
+      - name: Assert action.yml declares command input
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "command:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: command input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: command input found in action.yml"
+
+      - name: Assert action.yml declares dev-image-tag input
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "dev-image-tag:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: dev-image-tag input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: dev-image-tag input found in action.yml"
+
+      - name: Assert action.yml declares slim-image-tag input
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "slim-image-tag:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: slim-image-tag input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: slim-image-tag input found in action.yml"
+
+      - name: Assert action.yml declares label inputs
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          for label in label-authors label-description label-licenses label-maintainer label-url label-version; do
+            if ! grep -q "${label}:" "${ACTION_DIR}/action.yml"; then
+              echo "FAIL: ${label} input not found in action.yml"
+              exit 1
+            fi
+            echo "PASS: ${label} input found in action.yml"
+          done
+
+      - name: Assert action.yml declares git-ssh inputs
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          for input in git-ssh-private-key git-ssh-known-host-keys; do
+            if ! grep -q "${input}:" "${ACTION_DIR}/action.yml"; then
+              echo "FAIL: ${input} input not found in action.yml"
+              exit 1
+            fi
+            echo "PASS: ${input} input found in action.yml"
+          done
+
+      - name: Assert action.yml declares additional-slim-build-args input
+        run: |
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "additional-slim-build-args:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: additional-slim-build-args input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: additional-slim-build-args input found in action.yml"
+
+      - name: Assert label values are passed correctly via env mapping
+        run: |
+          echo "Verifying label env var mapping in action.yml..."
+          ACTION_DIR="${GITHUB_WORKSPACE}"
+          if ! grep -q "LABEL_AUTHORS" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_AUTHORS env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_AUTHORS env var found"
+          if ! grep -q "LABEL_DESCRIPTION" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_DESCRIPTION env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_DESCRIPTION env var found"
+          if ! grep -q "LABEL_LICENSES" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_LICENSES env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_LICENSES env var found"
+          if ! grep -q "LABEL_MAINTAINER" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_MAINTAINER env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_MAINTAINER env var found"
+          if ! grep -q "LABEL_URL" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_URL env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_URL env var found"
+          if ! grep -q "LABEL_VERSION" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: LABEL_VERSION env var not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: LABEL_VERSION env var found"

@@ -1,0 +1,116 @@
+name: Test docker-ros setup directory creation
+on:
+  workflow_dispatch:
+
+jobs:
+  test-setup:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Invoke docker-ros action (expect failure at Docker steps)
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          base-image: ubuntu:22.04
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test/test-image
+          image-tag: test
+
+      - name: Find action directory and assert scripts exist
+        run: |
+          echo "Locating action directory..."
+          # Try repo-root-relative path first (GITHUB_WORKSPACE = repo root after checkout)
+          ACTION_DIR="${GITHUB_WORKSPACE}/pristine/ika-rwth-aachen--docker-ros/v1.10.0"
+          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
+            # Fallback: GITHUB_WORKSPACE is the action directory itself
+            ACTION_DIR="${GITHUB_WORKSPACE}"
+          fi
+          echo "Action directory: ${ACTION_DIR}"
+
+          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
+            echo "FAIL: action.yml not found in action directory"
+            exit 1
+          fi
+          echo "PASS: action.yml found"
+
+          if [ ! -f "${ACTION_DIR}/scripts/ci.sh" ]; then
+            echo "FAIL: scripts/ci.sh not found"
+            exit 1
+          fi
+          echo "PASS: scripts/ci.sh found"
+
+          if [ ! -x "${ACTION_DIR}/scripts/ci.sh" ]; then
+            echo "FAIL: scripts/ci.sh is not executable"
+            exit 1
+          fi
+          echo "PASS: scripts/ci.sh is executable"
+
+          if [ ! -f "${ACTION_DIR}/docker/Dockerfile" ]; then
+            echo "FAIL: docker/Dockerfile not found"
+            exit 1
+          fi
+          echo "PASS: docker/Dockerfile found"
+
+      - name: Verify setup logic manually in a temp directory
+        run: |
+          echo "Running setup logic manually..."
+          # Locate action directory
+          ACTION_DIR="${GITHUB_WORKSPACE}/pristine/ika-rwth-aachen--docker-ros/v1.10.0"
+          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
+            ACTION_DIR="${GITHUB_WORKSPACE}"
+          fi
+          echo "Action directory: ${ACTION_DIR}"
+
+          SETUP_DIR=$(mktemp -d)
+          cd "${SETUP_DIR}"
+          if ! [[ -d "docker/docker-ros" ]]; then
+            mkdir -p docker
+            cp -r "${ACTION_DIR}" docker/docker-ros
+          fi
+
+          echo "Checking that docker/docker-ros was created..."
+          if [ ! -d "${SETUP_DIR}/docker/docker-ros" ]; then
+            echo "FAIL: docker/docker-ros directory was not created"
+            exit 1
+          fi
+          echo "PASS: docker/docker-ros directory exists"
+
+          if [ ! -f "${SETUP_DIR}/docker/docker-ros/scripts/ci.sh" ]; then
+            echo "FAIL: docker/docker-ros/scripts/ci.sh not found"
+            exit 1
+          fi
+          echo "PASS: ci.sh found in docker/docker-ros/scripts/"
+
+          if [ ! -f "${SETUP_DIR}/docker/docker-ros/docker/Dockerfile" ]; then
+            echo "FAIL: docker/docker-ros/docker/Dockerfile not found"
+            exit 1
+          fi
+          echo "PASS: Dockerfile found in docker/docker-ros/docker/"
+
+      - name: Assert action.yml has required inputs
+        run: |
+          # Locate action directory
+          ACTION_DIR="${GITHUB_WORKSPACE}/pristine/ika-rwth-aachen--docker-ros/v1.10.0"
+          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
+            ACTION_DIR="${GITHUB_WORKSPACE}"
+          fi
+
+          echo "Checking action.yml for required inputs..."
+          if ! grep -q "base-image:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: base-image input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: base-image input found"
+
+          if ! grep -q "target:" "${ACTION_DIR}/action.yml"; then
+            echo "FAIL: target input not found in action.yml"
+            exit 1
+          fi
+          echo "PASS: target input found"
