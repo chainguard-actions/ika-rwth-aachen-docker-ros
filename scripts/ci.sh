@@ -81,7 +81,7 @@ if [[ -n "${GITHUB_ACTIONS}" ]]; then
     else
         industrial_ci_image="${industrial_ci_image}-$(dpkg --print-architecture)"
     fi
-    safe_industrial_ci_image="$(printf '%s' "${industrial_ci_image}" | tr -d '\n\r')"
+    safe_industrial_ci_image=$(printf '%s' "${industrial_ci_image}" | tr -d '\n\r')
     echo "INDUSTRIAL_CI_IMAGE=${safe_industrial_ci_image}" >> "${GITHUB_OUTPUT}"
 fi
 
@@ -127,9 +127,13 @@ for PLATFORM in "${PLATFORMS[@]}"; do
         cd dist_linux*
         export DOCKER_API_VERSION="${DOCKER_API_VERSION:-$(docker version --format '{{.Server.APIVersion}}')}"
         docker pull "${image}"
-        IFS=' ' read -ra _slim_build_args <<< "${SLIM_BUILD_ARGS}"
-        IFS=' ' read -ra _additional_slim_build_args <<< "${ADDITIONAL_SLIM_BUILD_ARGS}"
-        ./mint slim --target "${image}" --tag "${slim_image}" "${_slim_build_args[@]}" "${_additional_slim_build_args[@]}"
+        mapfile -t slim_args < <(printf '%s' "${SLIM_BUILD_ARGS}" | xargs printf '%s\n')
+        if [[ -n "${ADDITIONAL_SLIM_BUILD_ARGS}" ]]; then
+            mapfile -t additional_slim_args < <(printf '%s' "${ADDITIONAL_SLIM_BUILD_ARGS}" | xargs printf '%s\n')
+        else
+            additional_slim_args=()
+        fi
+        ./mint slim --target "${image}" --tag "${slim_image}" "${slim_args[@]}" "${additional_slim_args[@]}"
         docker push "${slim_image}"
         cd -
         rm -rf dist_linux* ds.tar.gz

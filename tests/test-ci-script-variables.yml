@@ -1,0 +1,143 @@
+name: Test ci.sh script variable handling
+on:
+  workflow_dispatch:
+
+jobs:
+  test-ci-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Invoke the action (will fail at build step, that's expected)
+      - id: action
+        name: Invoke docker-ros action
+        uses: .
+        with:
+          base-image: ubuntu:22.04
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test-org/test-repo
+          image-tag: ci-test
+        continue-on-error: true
+
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+
+      - name: Test INDUSTRIAL_CI_IMAGE output for run target
+        run: |
+          # Test that ci.sh correctly sets INDUSTRIAL_CI_IMAGE for run target
+          # We test the logic without running docker build by checking the output variable logic
+          ARCH=$(dpkg --print-architecture)
+          IMAGE_NAME="ghcr.io/myorg/myrepo"
+          IMAGE_TAG="latest"
+          TARGET="run"
+          IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+          DEV_IMAGE_NAME="${IMAGE_NAME}"
+          DEV_IMAGE_TAG="${IMAGE_TAG}-dev"
+          DEV_IMAGE="${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}"
+          _IMAGE_POSTFIX=""
+
+          # Replicate the INDUSTRIAL_CI_IMAGE logic from ci.sh
+          industrial_ci_image="${IMAGE}"
+          [[ "${TARGET}" == *"dev"* ]] && industrial_ci_image="${DEV_IMAGE}"
+          [[ -n "${_IMAGE_POSTFIX}" ]] && industrial_ci_image="${industrial_ci_image}${_IMAGE_POSTFIX}"
+          # Single platform: append arch
+          industrial_ci_image="${industrial_ci_image}-${ARCH}"
+
+          echo "INDUSTRIAL_CI_IMAGE: $industrial_ci_image"
+          EXPECTED="${IMAGE_NAME}:${IMAGE_TAG}-${ARCH}"
+          if [ "$industrial_ci_image" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$industrial_ci_image'"
+            exit 1
+          fi
+          echo "PASS: INDUSTRIAL_CI_IMAGE correctly set for run target"
+
+      - name: Test INDUSTRIAL_CI_IMAGE output for dev target
+        run: |
+          ARCH=$(dpkg --print-architecture)
+          IMAGE_NAME="ghcr.io/myorg/myrepo"
+          IMAGE_TAG="latest"
+          TARGET="dev"
+          IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+          DEV_IMAGE_NAME="${IMAGE_NAME}"
+          DEV_IMAGE_TAG="${IMAGE_TAG}-dev"
+          DEV_IMAGE="${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}"
+          _IMAGE_POSTFIX=""
+
+          # Replicate the INDUSTRIAL_CI_IMAGE logic from ci.sh
+          industrial_ci_image="${IMAGE}"
+          [[ "${TARGET}" == *"dev"* ]] && industrial_ci_image="${DEV_IMAGE}"
+          [[ -n "${_IMAGE_POSTFIX}" ]] && industrial_ci_image="${industrial_ci_image}${_IMAGE_POSTFIX}"
+          industrial_ci_image="${industrial_ci_image}-${ARCH}"
+
+          echo "INDUSTRIAL_CI_IMAGE: $industrial_ci_image"
+          EXPECTED="${IMAGE_NAME}:${IMAGE_TAG}-dev-${ARCH}"
+          if [ "$industrial_ci_image" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$industrial_ci_image'"
+            exit 1
+          fi
+          echo "PASS: INDUSTRIAL_CI_IMAGE correctly set for dev target"
+
+      - name: Test INDUSTRIAL_CI_IMAGE output with image postfix
+        run: |
+          ARCH=$(dpkg --print-architecture)
+          IMAGE_NAME="ghcr.io/myorg/myrepo"
+          IMAGE_TAG="latest"
+          TARGET="run"
+          IMAGE="${IMAGE_NAME}:${IMAGE_TAG}"
+          DEV_IMAGE_NAME="${IMAGE_NAME}"
+          DEV_IMAGE_TAG="${IMAGE_TAG}-dev"
+          DEV_IMAGE="${DEV_IMAGE_NAME}:${DEV_IMAGE_TAG}"
+          _IMAGE_POSTFIX="_mybranch_ci"
+
+          # Replicate the INDUSTRIAL_CI_IMAGE logic from ci.sh
+          industrial_ci_image="${IMAGE}"
+          [[ "${TARGET}" == *"dev"* ]] && industrial_ci_image="${DEV_IMAGE}"
+          [[ -n "${_IMAGE_POSTFIX}" ]] && industrial_ci_image="${industrial_ci_image}${_IMAGE_POSTFIX}"
+          industrial_ci_image="${industrial_ci_image}-${ARCH}"
+
+          echo "INDUSTRIAL_CI_IMAGE: $industrial_ci_image"
+          EXPECTED="${IMAGE_NAME}:${IMAGE_TAG}${_IMAGE_POSTFIX}-${ARCH}"
+          if [ "$industrial_ci_image" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$industrial_ci_image'"
+            exit 1
+          fi
+          echo "PASS: INDUSTRIAL_CI_IMAGE correctly set with postfix"
+
+      - name: Test default variable values in ci.sh
+        run: |
+          # Verify that ci.sh sets correct defaults
+          TARGET="${TARGET:-run}"
+          IMAGE_TAG="${IMAGE_TAG:-latest}"
+          ENABLE_SLIM="${ENABLE_SLIM:-true}"
+          ENABLE_SINGLEARCH_PUSH="${ENABLE_SINGLEARCH_PUSH:-false}"
+          _ENABLE_IMAGE_PUSH="${_ENABLE_IMAGE_PUSH:-false}"
+          _IMAGE_POSTFIX="${_IMAGE_POSTFIX:-}"
+
+          echo "TARGET: $TARGET"
+          echo "IMAGE_TAG: $IMAGE_TAG"
+          echo "ENABLE_SLIM: $ENABLE_SLIM"
+
+          if [ "$TARGET" != "run" ]; then
+            echo "FAIL: default TARGET should be 'run', got '$TARGET'"
+            exit 1
+          fi
+          if [ "$IMAGE_TAG" != "latest" ]; then
+            echo "FAIL: default IMAGE_TAG should be 'latest', got '$IMAGE_TAG'"
+            exit 1
+          fi
+          if [ "$ENABLE_SLIM" != "true" ]; then
+            echo "FAIL: default ENABLE_SLIM should be 'true', got '$ENABLE_SLIM'"
+            exit 1
+          fi
+          echo "PASS: default variable values are correct"

@@ -262,13 +262,16 @@ runs:
       shell: bash
       env:
         BUILD_CONTEXT: ${{ inputs.build-context }}
-      run: test -f "${BUILD_CONTEXT}/.repos" || echo "repositories:" > "${BUILD_CONTEXT}/.repos"
+      run: test -f "$BUILD_CONTEXT/.repos" || echo "repositories:" > "$BUILD_CONTEXT/.repos"
     - name: Run industrial_ci
       if: ${{ inputs.enable-industrial-ci == 'true' }}
       uses: ros-industrial/industrial_ci@125164b9f1883cdf1858897a7146d1bebf2be5c6 # master
       env:
         ADDITIONAL_DEBS: git
-        AFTER_INIT_EMBED: '[[ -n ${{ inputs.git-https-server }} ]] && git config --global url.https://${{ inputs.git-https-user }}:${{ inputs.git-https-password }}@${{ inputs.git-https-server }}.insteadOf https://${{ inputs.git-https-server }}'
+        GIT_HTTPS_SERVER: ${{ inputs.git-https-server }}
+        GIT_HTTPS_USER: ${{ inputs.git-https-user }}
+        GIT_HTTPS_PASSWORD: ${{ inputs.git-https-password }}
+        AFTER_INIT_EMBED: '[[ -n $GIT_HTTPS_SERVER ]] && git config --global url.https://$GIT_HTTPS_USER:$GIT_HTTPS_PASSWORD@$GIT_HTTPS_SERVER.insteadOf https://$GIT_HTTPS_SERVER'
         BEFORE_BUILD_TARGET_WORKSPACE: '[ -f /opt/ws_base_image/install/setup.bash ] && echo "source /opt/ws_base_image/install/setup.bash" >> /root/upstream_ws/install/setup.bash || true'
         DOCKER_IMAGE: ${{ steps.build-images.outputs.INDUSTRIAL_CI_IMAGE }}
         DOCKER_PULL: false

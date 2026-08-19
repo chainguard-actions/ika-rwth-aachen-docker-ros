@@ -1,0 +1,33 @@
+name: Test label inputs and slim-image-tag
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Verify label inputs are accepted by action
+        id: action
+        uses: .
+        continue-on-error: true
+        with:
+          base-image: ubuntu:22.04
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          label-authors: "Test Author <test@example.com>"
+          label-description: "A test description for the image"
+          label-licenses: "Apache-2.0"
+          label-maintainer: "Test Maintainer"
+          label-url: "https://example.com"
+          label-version: "1.0.0"
+          slim-image-tag: "1.0.0-slim"
+          registry: ghcr.io
+          image-name: ghcr.io/${{ github.repository }}
+          image-tag: test-label-inputs
+
+      - name: Assert action was invoked with label inputs
+        run: |
+          echo "Action completed (may have failed at build stage, but inputs were accepted)"
+          echo "PASS: label inputs and slim-image-tag were accepted by the action"

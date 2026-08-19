@@ -1,0 +1,85 @@
+name: Test utils.sh script functions
+on:
+  workflow_dispatch:
+
+jobs:
+  test-utils:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Invoke the action (will fail at build step, that's expected)
+      - id: action
+        name: Invoke docker-ros action
+        uses: .
+        with:
+          base-image: ubuntu:22.04
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test-org/test-repo
+          image-tag: ci-test
+        continue-on-error: true
+
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+
+      - name: Read utils.sh content
+        run: |
+          cat "$GITHUB_WORKSPACE/scripts/utils.sh"
+
+      - name: Test require_var passes when variable is set
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/utils.sh"
+
+          MY_VAR="hello"
+          # require_var should not fail when variable is set
+          # Run in subshell to capture exit code without killing the step
+          if ! (MY_VAR="hello" && source "$GITHUB_WORKSPACE/scripts/utils.sh" && require_var "MY_VAR"); then
+            echo "FAIL: require_var should pass when variable is set"
+            exit 1
+          fi
+          echo "PASS: require_var passes when variable is set"
+
+      - name: Test require_var fails when variable is unset
+        run: |
+          # require_var should fail when variable is not set
+          # Run in subshell to capture exit code without killing the step
+          if (source "$GITHUB_WORKSPACE/scripts/utils.sh" && require_var "UNSET_VAR_XYZ_123") 2>/dev/null; then
+            echo "FAIL: require_var should fail when variable is unset"
+            exit 1
+          fi
+          echo "PASS: require_var fails when variable is unset"
+
+      - name: Test open_log_group and close_log_group functions exist
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/utils.sh"
+
+          # Verify the functions are defined
+          if ! declare -f open_log_group > /dev/null 2>&1; then
+            echo "FAIL: open_log_group function not defined"
+            exit 1
+          fi
+          if ! declare -f close_log_group > /dev/null 2>&1; then
+            echo "FAIL: close_log_group function not defined"
+            exit 1
+          fi
+          echo "PASS: log group functions are defined"
+
+      - name: Test open_log_group and close_log_group run without error
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/utils.sh"
+
+          open_log_group "Test group"
+          echo "Inside log group"
+          close_log_group
+          echo "PASS: log group functions run without error"

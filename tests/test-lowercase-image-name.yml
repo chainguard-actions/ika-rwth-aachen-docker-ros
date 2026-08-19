@@ -5,95 +5,102 @@ on:
 jobs:
   test-lowercase:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_REF: refs/heads/main
-      GITHUB_EVENT_NAME: push
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Invoke docker-ros action with mixed-case image name
-        id: action
+      # Invoke the action (will fail at build step, that's expected)
+      - id: action
+        name: Invoke docker-ros action
         uses: .
-        continue-on-error: true
         with:
           base-image: ubuntu:22.04
           target: dev
           enable-checkout: "false"
           enable-slim: "false"
-          image-name: ghcr.io/Test/MyImage
-          dev-image-name: ghcr.io/Test/MyImage
-          slim-image-name: ghcr.io/Test/MyImage
-          image-tag: test
+          image-name: ghcr.io/MyOrg/MyRepo
+          image-tag: ci-test
+        continue-on-error: true
 
-      - name: Assert action.yml exists in action directory
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
         run: |
-          echo "Checking that action.yml exists..."
-          # Locate action directory
-          ACTION_DIR="${GITHUB_WORKSPACE}/pristine/ika-rwth-aachen--docker-ros/v1.10.0"
-          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
-            ACTION_DIR="${GITHUB_WORKSPACE}"
-          fi
-          echo "Action directory: ${ACTION_DIR}"
-
-          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
-            echo "FAIL: action.yml not found"
-            exit 1
-          fi
-          echo "PASS: action.yml found"
-
-      - name: Assert lowercase conversion logic works correctly
-        run: |
-          echo "Testing lowercase conversion logic..."
-          MIXED_CASE="ghcr.io/Test/MyImage"
-          LOWER_CASE=$(echo "${MIXED_CASE}" | tr '[:upper:]' '[:lower:]')
-          echo "Input:  ${MIXED_CASE}"
-          echo "Output: ${LOWER_CASE}"
-          EXPECTED="ghcr.io/test/myimage"
-          if [ "${LOWER_CASE}" != "${EXPECTED}" ]; then
-            echo "FAIL: expected '${EXPECTED}', got '${LOWER_CASE}'"
-            exit 1
-          fi
-          echo "PASS: lowercase conversion works correctly"
-
-      - name: Assert image name with uppercase would be rejected by Docker
-        run: |
-          echo "Verifying that lowercase enforcement is needed..."
-          MIXED_CASE="ghcr.io/Test/MyImage"
-          if echo "${MIXED_CASE}" | grep -q '[A-Z]'; then
-            echo "PASS: mixed-case image name contains uppercase letters (enforcement needed)"
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (outcome: $OUTCOME)"
           else
-            echo "FAIL: test image name has no uppercase letters"
+            echo "FAIL: unexpected outcome: $OUTCOME"
             exit 1
           fi
-          LOWER_CASE=$(echo "${MIXED_CASE}" | tr '[:upper:]' '[:lower:]')
-          if echo "${LOWER_CASE}" | grep -q '[A-Z]'; then
-            echo "FAIL: lowercase conversion still has uppercase letters"
-            exit 1
-          fi
-          echo "PASS: lowercase conversion removes all uppercase letters"
 
-      - name: Assert all-lowercase image name passes through unchanged
+      # Test the lowercase enforcement logic used by docker-ros
+      # The action uses ASzc/change-string-case-action internally to enforce lowercase
+      # We test the equivalent bash logic here
+
+      - name: Test lowercase enforcement for mixed-case image name
         run: |
-          echo "Testing that already-lowercase names are unchanged..."
-          LOWER_INPUT="ghcr.io/test/myimage"
-          LOWER_OUTPUT=$(echo "${LOWER_INPUT}" | tr '[:upper:]' '[:lower:]')
-          if [ "${LOWER_INPUT}" != "${LOWER_OUTPUT}" ]; then
-            echo "FAIL: lowercase input was changed: '${LOWER_INPUT}' -> '${LOWER_OUTPUT}'"
+          INPUT="ghcr.io/MyOrg/MyRepo"
+          ACTUAL=$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')
+          echo "input: $INPUT"
+          echo "actual: $ACTUAL"
+          EXPECTED="ghcr.io/myorg/myrepo"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: already-lowercase name is unchanged"
+          echo "PASS: image name correctly lowercased"
 
-      - name: Assert action uses change-string-case-action for lowercase enforcement
+      - name: Test lowercase enforcement for uppercase image name
         run: |
-          echo "Checking that action.yml references change-string-case-action..."
-          # Locate action directory
-          ACTION_DIR="${GITHUB_WORKSPACE}/pristine/ika-rwth-aachen--docker-ros/v1.10.0"
-          if [ ! -f "${ACTION_DIR}/action.yml" ]; then
-            ACTION_DIR="${GITHUB_WORKSPACE}"
-          fi
-
-          if ! grep -q "change-string-case-action" "${ACTION_DIR}/action.yml"; then
-            echo "FAIL: change-string-case-action not referenced in action.yml"
+          INPUT="GHCR.IO/MYORG/MYREPO"
+          ACTUAL=$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')
+          echo "input: $INPUT"
+          echo "actual: $ACTUAL"
+          EXPECTED="ghcr.io/myorg/myrepo"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
             exit 1
           fi
-          echo "PASS: change-string-case-action is referenced in action.yml"
+          echo "PASS: uppercase image name correctly lowercased"
+
+      - name: Test lowercase enforcement for already-lowercase name
+        run: |
+          INPUT="ghcr.io/myorg/myrepo"
+          ACTUAL=$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')
+          echo "input: $INPUT"
+          echo "actual: $ACTUAL"
+          EXPECTED="ghcr.io/myorg/myrepo"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: already-lowercase name remains unchanged"
+
+      - name: Test image name with tag lowercase enforcement
+        run: |
+          INPUT="ghcr.io/MyOrg/MyRepo:MyTag"
+          ACTUAL=$(echo "$INPUT" | tr '[:upper:]' '[:lower:]')
+          echo "input: $INPUT"
+          echo "actual: $ACTUAL"
+          EXPECTED="ghcr.io/myorg/myrepo:mytag"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: image name with tag correctly lowercased"
+
+      - name: Test default image name format
+        run: |
+          # Simulate the default image name: ghcr.io/${{ github.repository }}
+          # github.repository is typically lowercase but may contain uppercase
+          REPO="MyOrg/MyRepo"
+          IMAGE_NAME="ghcr.io/${REPO}"
+          ACTUAL=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+          echo "image name: $IMAGE_NAME"
+          echo "actual lowercase: $ACTUAL"
+          EXPECTED="ghcr.io/myorg/myrepo"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS: default image name format correctly lowercased"

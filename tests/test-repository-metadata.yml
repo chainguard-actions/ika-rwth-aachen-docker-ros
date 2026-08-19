@@ -1,0 +1,116 @@
+name: Test repository-metadata.sh functions
+on:
+  workflow_dispatch:
+
+jobs:
+  test-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Invoke the action (will fail at build step, that's expected)
+      - id: action
+        name: Invoke docker-ros action
+        uses: .
+        with:
+          base-image: ubuntu:22.04
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test-org/test-repo
+          image-tag: ci-test
+        continue-on-error: true
+
+      - name: Assert action ran
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "Action outcome: $OUTCOME"
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran (outcome: $OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome: $OUTCOME"
+            exit 1
+          fi
+
+      - name: Test normalize_git_url with SSH URL
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          result=$(normalize_git_url "git@github.com:myorg/myrepo.git")
+          echo "result: $result"
+          EXPECTED="https://github.com/myorg/myrepo"
+          if [ "$result" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$result'"
+            exit 1
+          fi
+          echo "PASS: SSH URL normalized correctly"
+
+      - name: Test normalize_git_url with HTTPS URL
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          result=$(normalize_git_url "https://github.com/myorg/myrepo.git")
+          echo "result: $result"
+          EXPECTED="https://github.com/myorg/myrepo"
+          if [ "$result" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$result'"
+            exit 1
+          fi
+          echo "PASS: HTTPS URL normalized correctly"
+
+      - name: Test normalize_git_url with git:// URL
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          result=$(normalize_git_url "git://github.com/myorg/myrepo.git")
+          echo "result: $result"
+          EXPECTED="https://github.com/myorg/myrepo"
+          if [ "$result" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$result'"
+            exit 1
+          fi
+          echo "PASS: git:// URL normalized correctly"
+
+      - name: Test normalize_git_url with HTTPS URL containing credentials
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          result=$(normalize_git_url "https://user:password@github.com/myorg/myrepo.git")
+          echo "result: $result"
+          EXPECTED="https://github.com/myorg/myrepo"
+          if [ "$result" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$result'"
+            exit 1
+          fi
+          echo "PASS: HTTPS URL with credentials normalized correctly"
+
+      - name: Test trim_whitespace function
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          result=$(trim_whitespace "  hello world  ")
+          echo "result: '$result'"
+          EXPECTED="hello world"
+          if [ "$result" != "$EXPECTED" ]; then
+            echo "FAIL: expected '$EXPECTED' but got '$result'"
+            exit 1
+          fi
+          echo "PASS: trim_whitespace works correctly"
+
+      - name: Test find_repository_license_file
+        run: |
+          source "$GITHUB_WORKSPACE/scripts/repository-metadata.sh"
+
+          # The action repo has a LICENSE file
+          result=$(find_repository_license_file "$GITHUB_WORKSPACE")
+          echo "result: $result"
+          if [ -z "$result" ]; then
+            echo "FAIL: expected a LICENSE file to be found"
+            exit 1
+          fi
+          if [[ "$result" != *"LICENSE"* ]]; then
+            echo "FAIL: expected result to contain 'LICENSE', got '$result'"
+            exit 1
+          fi
+          echo "PASS: find_repository_license_file found: $result"
