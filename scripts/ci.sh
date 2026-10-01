@@ -99,8 +99,12 @@ for PLATFORM in "${PLATFORMS[@]}"; do
         curl -L -o ds.tar.gz https://github.com/slimtoolkit/slim/releases/download/1.40.11/dist_linux.tar.gz
         tar -xvf ds.tar.gz
         cd dist_linux*
-        IFS=' ' read -ra SLIM_BUILD_ARGS_ARRAY <<< "${SLIM_BUILD_ARGS}"
-        ./slim build --target "${image}" --tag "${slim_image}" "${SLIM_BUILD_ARGS_ARRAY[@]}"
+        slim_args=()
+        if [ -n "${SLIM_BUILD_ARGS}" ]; then
+            while IFS= read -r -d '' t; do slim_args+=("$t"); done \
+                < <(printf '%s' "${SLIM_BUILD_ARGS}" | xargs printf '%s\0')
+        fi
+        ./slim build --target "${image}" --tag "${slim_image}" "${slim_args[@]}"
         docker push "${slim_image}"
         cd -
         rm -rf dist_linux* ds.tar.gz
