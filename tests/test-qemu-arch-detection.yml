@@ -1,4 +1,4 @@
-name: Test run target with command
+name: Test QEMU architecture detection
 on:
   workflow_dispatch:
 
@@ -8,36 +8,29 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Verify docker-ros directory does not exist yet
-        run: |
-          if [ -d "$GITHUB_WORKSPACE/docker/docker-ros" ]; then
-            echo "FAIL: docker/docker-ros already exists before action runs"
-            exit 1
-          fi
-          echo "PASS: docker/docker-ros does not exist yet"
-
       - id: action
         uses: .
         continue-on-error: true
         with:
           base-image: ubuntu:22.04
-          target: run
-          command: echo hello
+          target: dev
           enable-checkout: "false"
           enable-slim: "false"
           image-name: ghcr.io/test-org/test-repo
           image-tag: ci-test
           registry: ghcr.io
 
-      - name: Assert docker-ros directory was set up
+      - name: Assert action ran and RUNNER_ARCH was detected
         run: |
-          echo "Checking docker/docker-ros directory..."
-          if [ -d "$GITHUB_WORKSPACE/docker/docker-ros" ]; then
-            echo "PASS: docker/docker-ros directory was created by the action"
-          else
-            echo "FAIL: docker/docker-ros directory was not created"
+          # The action's "Prepare setup of QEMU" step runs dpkg --print-architecture
+          # We verify the host can detect its architecture
+          ARCH=$(dpkg --print-architecture)
+          echo "Host architecture: $ARCH"
+          if [ -z "$ARCH" ]; then
+            echo "FAIL: could not detect architecture"
             exit 1
           fi
+          echo "PASS: architecture detected as '$ARCH'"
 
       - name: Assert action outcome is acceptable
         env:

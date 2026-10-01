@@ -1,4 +1,4 @@
-name: Test run target with command
+name: Test lowercase image name enforcement
 on:
   workflow_dispatch:
 
@@ -21,11 +21,12 @@ jobs:
         continue-on-error: true
         with:
           base-image: ubuntu:22.04
-          target: run
-          command: echo hello
+          target: dev
           enable-checkout: "false"
           enable-slim: "false"
-          image-name: ghcr.io/test-org/test-repo
+          image-name: ghcr.io/Test-Org/Test-Repo
+          dev-image-name: ghcr.io/Test-Org/Test-Repo
+          slim-image-name: ghcr.io/Test-Org/Test-Repo
           image-tag: ci-test
           registry: ghcr.io
 

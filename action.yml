@@ -153,7 +153,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout repository
-      uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
       if: ${{ inputs.enable-checkout == 'true' }}
       with:
         submodules: ${{ inputs.enable-checkout-submodules }}
@@ -244,7 +244,7 @@ runs:
       shell: bash
       env:
         BUILD_CONTEXT: ${{ inputs.build-context }}
-      run: test -f "${BUILD_CONTEXT}/.repos" || echo "repositories:" > "${BUILD_CONTEXT}/.repos"
+      run: test -f "$BUILD_CONTEXT/.repos" || echo "repositories:" > "$BUILD_CONTEXT/.repos"
     - name: Run industrial_ci
       if: ${{ inputs.enable-industrial-ci == 'true' }}
       uses: ros-industrial/industrial_ci@125164b9f1883cdf1858897a7146d1bebf2be5c6 # master
@@ -260,7 +260,7 @@ runs:
         UPSTREAM_WORKSPACE: ${{ inputs.build-context }}/.repos
     - name: Slugify ref name
       id: slugify-ref-name
-      uses: gacts/github-slug@83cd3d95888be8777f0d9c810c1266da1c5c3ef1 # v1
+      uses: gacts/github-slug@c29c0ddd888a1703a6fc06c55a5f6ddd7beae490 # v1
       with:
         to-slug: ${{ github.ref_name }}
     - name: Push images

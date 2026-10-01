@@ -1,4 +1,4 @@
-name: Test run target with command
+name: Test basic setup (dev target)
 on:
   workflow_dispatch:
 
@@ -21,8 +21,7 @@ jobs:
         continue-on-error: true
         with:
           base-image: ubuntu:22.04
-          target: run
-          command: echo hello
+          target: dev
           enable-checkout: "false"
           enable-slim: "false"
           image-name: ghcr.io/test-org/test-repo

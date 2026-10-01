@@ -1,4 +1,4 @@
-name: Test run target with command
+name: Test extended inputs coverage
 on:
   workflow_dispatch:
 
@@ -24,10 +24,18 @@ jobs:
           target: run
           command: echo hello
           enable-checkout: "false"
-          enable-slim: "false"
+          enable-slim: "true"
           image-name: ghcr.io/test-org/test-repo
           image-tag: ci-test
           registry: ghcr.io
+          # Inputs that need coverage
+          ros-distro: humble
+          platform: amd64
+          dev-image-tag: ci-dev
+          slim-image-tag: ci-slim
+          additional-slim-build-args: "--continue-after=10"
+          git-ssh-known-host-keys: ""
+          git-ssh-private-key: ""
 
       - name: Assert docker-ros directory was set up
         run: |
