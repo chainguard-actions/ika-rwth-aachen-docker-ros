@@ -236,8 +236,7 @@ runs:
       shell: bash
       env:
         BUILD_CONTEXT: ${{ inputs.build-context }}
-      run: |
-        test -f "$BUILD_CONTEXT/.repos" || echo "repositories:" > "$BUILD_CONTEXT/.repos"
+      run: test -f "$BUILD_CONTEXT/.repos" || echo "repositories:" > "$BUILD_CONTEXT/.repos"
     - name: Run industrial_ci
       if: ${{ inputs.enable-industrial-ci == 'true' }}
       uses: ros-industrial/industrial_ci@125164b9f1883cdf1858897a7146d1bebf2be5c6 # master
