@@ -147,7 +147,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout repository
-      uses: actions/checkout@a37ce9120846195fa4ece8f58b268e6043cb2f26 # v3
+      uses: chainguard-actions/actions-checkout@44c54598b257617371589c99ff0b52dab29a2bb4 # v3
       if: ${{ inputs.enable-checkout == 'true' }}
       with:
         submodules: ${{ inputs.enable-checkout-submodules }}
@@ -166,15 +166,15 @@ runs:
       run: echo "RUNNER_ARCH=$(dpkg --print-architecture)" >> $GITHUB_OUTPUT
     - name: Set up QEMU
       if: ${{ steps.prepare-setup-of-qemu.outputs.RUNNER_ARCH != inputs.platform }}
-      uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+      uses: chainguard-actions/docker-setup-qemu-action@909159ce490a186a612cf47110cc1120d7e620df # v2
     - name: Login to Docker registry
-      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      uses: chainguard-actions/docker-login-action@aefdd94d7a26b90dba6146f32d376ef273113621 # v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-password }}
     - name: Set up Docker buildx
-      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      uses: chainguard-actions/docker-setup-buildx-action@6d415f71ab3ef9a7738ade671313ffac4ba9f06c # v3
     - name: Enforce lower-case image name
       id: image-name
       uses: ASzc/change-string-case-action@d0603cd0a7dd490be678164909f65c7737470a7f # v6
