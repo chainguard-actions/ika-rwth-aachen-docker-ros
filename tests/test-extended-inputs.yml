@@ -21,21 +21,19 @@ jobs:
         continue-on-error: true
         with:
           base-image: ubuntu:22.04
-          target: run
-          command: echo hello
+          target: dev
           enable-checkout: "false"
           enable-slim: "true"
           image-name: ghcr.io/test-org/test-repo
           image-tag: ci-test
+          dev-image-tag: ci-test-dev
+          slim-image-tag: ci-test-slim
           registry: ghcr.io
-          # Inputs that need coverage
-          ros-distro: humble
           platform: amd64
-          dev-image-tag: ci-dev
-          slim-image-tag: ci-slim
-          additional-slim-build-args: "--continue-after=10"
-          git-ssh-known-host-keys: ""
+          ros-distro: humble
+          git-ssh-known-host-keys: "github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC"
           git-ssh-private-key: ""
+          additional-slim-build-args: "--continue-after=10"
 
       - name: Assert docker-ros directory was set up
         run: |
