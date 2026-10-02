@@ -165,7 +165,7 @@ runs:
           -d "{\"repository\":\"${GITHUB_REPOSITORY}\",\"action\":\"${GITHUB_ACTION_REPOSITORY}\"}" \
           "https://actions.enforce.dev/actions/v1/record" >/dev/null 2>&1 || true
     - name: Checkout repository
-      uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      uses: chainguard-actions/actions-checkout@44c54598b257617371589c99ff0b52dab29a2bb4 # v3
       if: ${{ inputs.enable-checkout == 'true' }}
       with:
         submodules: ${{ inputs.enable-checkout-submodules }}
@@ -184,15 +184,15 @@ runs:
       run: echo "RUNNER_ARCH=$(dpkg --print-architecture)" >> $GITHUB_OUTPUT
     - name: Set up QEMU
       if: ${{ steps.prepare-setup-of-qemu.outputs.RUNNER_ARCH != inputs.platform }}
-      uses: docker/setup-qemu-action@2b82ce82d56a2a04d2637cd93a637ae1b359c0a7 # v2
+      uses: chainguard-actions/docker-setup-qemu-action@909159ce490a186a612cf47110cc1120d7e620df # v2
     - name: Login to Docker registry
-      uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+      uses: chainguard-actions/docker-login-action@aefdd94d7a26b90dba6146f32d376ef273113621 # v3
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry-user }}
         password: ${{ inputs.registry-password }}
     - name: Set up Docker buildx
-      uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      uses: chainguard-actions/docker-setup-buildx-action@6d415f71ab3ef9a7738ade671313ffac4ba9f06c # v3
     - name: Enforce lower-case image name
       id: image-name
       uses: ASzc/change-string-case-action@d0603cd0a7dd490be678164909f65c7737470a7f # v6
@@ -268,21 +268,21 @@ runs:
       uses: ros-industrial/industrial_ci@125164b9f1883cdf1858897a7146d1bebf2be5c6 # master
       env:
         ADDITIONAL_DEBS: git
-        GIT_HTTPS_SERVER: ${{ inputs.git-https-server }}
-        GIT_HTTPS_USER: ${{ inputs.git-https-user }}
-        GIT_HTTPS_PASSWORD: ${{ inputs.git-https-password }}
         AFTER_INIT_EMBED: '[[ -n $GIT_HTTPS_SERVER ]] && git config --global url.https://$GIT_HTTPS_USER:$GIT_HTTPS_PASSWORD@$GIT_HTTPS_SERVER.insteadOf https://$GIT_HTTPS_SERVER'
         BEFORE_BUILD_TARGET_WORKSPACE: '[ -f /opt/ws_base_image/install/setup.bash ] && echo "source /opt/ws_base_image/install/setup.bash" >> /root/upstream_ws/install/setup.bash || true'
         DOCKER_IMAGE: ${{ steps.build-images.outputs.INDUSTRIAL_CI_IMAGE }}
         DOCKER_PULL: false
         DOCKER_RUN_OPTS: -u root:root
+        GIT_HTTPS_PASSWORD: ${{ inputs.git-https-password }}
+        GIT_HTTPS_SERVER: ${{ inputs.git-https-server }}
+        GIT_HTTPS_USER: ${{ inputs.git-https-user }}
         SSH_PRIVATE_KEY: ${{ inputs.git-ssh-private-key }}
         SSH_SERVER_HOSTKEYS: ${{ inputs.git-ssh-known-host-keys }}
         TARGET_WORKSPACE: ${{ inputs.build-context }}
         UPSTREAM_WORKSPACE: ${{ inputs.build-context }}/.repos
     - name: Slugify ref name
       id: slugify-ref-name
-      uses: gacts/github-slug@83cd3d95888be8777f0d9c810c1266da1c5c3ef1 # v1
+      uses: chainguard-actions/gacts-github-slug@999bc6a4585057091e2f0b2b5073bf8aede89992 # v1
       with:
         to-slug: ${{ github.head_ref || github.ref_name }}
     - name: Push images
