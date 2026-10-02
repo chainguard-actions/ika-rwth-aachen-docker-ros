@@ -255,7 +255,7 @@ runs:
         UPSTREAM_WORKSPACE: ${{ inputs.build-context }}/.repos
     - name: Slugify ref name
       id: slugify-ref-name
-      uses: gacts/github-slug@c29c0ddd888a1703a6fc06c55a5f6ddd7beae490 # v1
+      uses: chainguard-actions/gacts-github-slug@999bc6a4585057091e2f0b2b5073bf8aede89992 # v1
       with:
         to-slug: ${{ github.ref_name }}
     - name: Push images
