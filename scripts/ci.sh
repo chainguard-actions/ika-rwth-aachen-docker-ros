@@ -81,7 +81,7 @@ if [[ -n "${GITHUB_ACTIONS}" ]]; then
     else
         industrial_ci_image="${industrial_ci_image}-$(dpkg --print-architecture)"
     fi
-    safe_industrial_ci_image="$(printf '%s' "${industrial_ci_image}" | tr -d '\n\r')"
+    safe_industrial_ci_image=$(printf '%s' "${industrial_ci_image}" | tr -d '\n\r')
     echo "INDUSTRIAL_CI_IMAGE=${safe_industrial_ci_image}" >> "${GITHUB_OUTPUT}"
 fi
 
@@ -127,17 +127,17 @@ for PLATFORM in "${PLATFORMS[@]}"; do
         cd dist_linux*
         export DOCKER_API_VERSION="${DOCKER_API_VERSION:-$(docker version --format '{{.Server.APIVersion}}')}"
         docker pull "${image}"
-        slim_build_args=()
+        slim_args=()
         if [ -n "${SLIM_BUILD_ARGS}" ]; then
-            while IFS= read -r -d '' t; do slim_build_args+=("$t"); done \
+            while IFS= read -r -d '' t; do slim_args+=("$t"); done \
                 < <(printf '%s' "${SLIM_BUILD_ARGS}" | xargs printf '%s\0')
         fi
-        additional_slim_build_args=()
+        additional_slim_args=()
         if [ -n "${ADDITIONAL_SLIM_BUILD_ARGS}" ]; then
-            while IFS= read -r -d '' t; do additional_slim_build_args+=("$t"); done \
+            while IFS= read -r -d '' t; do additional_slim_args+=("$t"); done \
                 < <(printf '%s' "${ADDITIONAL_SLIM_BUILD_ARGS}" | xargs printf '%s\0')
         fi
-        ./mint slim --target "${image}" --tag "${slim_image}" "${slim_build_args[@]}" "${additional_slim_build_args[@]}"
+        ./mint slim --target "${image}" --tag "${slim_image}" "${slim_args[@]}" "${additional_slim_args[@]}"
         docker push "${slim_image}"
         cd -
         rm -rf dist_linux* ds.tar.gz
