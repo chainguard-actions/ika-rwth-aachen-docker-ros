@@ -183,17 +183,17 @@ runs:
       uses: chainguard-actions/docker-setup-buildx-action@6d415f71ab3ef9a7738ade671313ffac4ba9f06c # v3
     - name: Enforce lower-case image name
       id: image-name
-      uses: chainguard-actions/aszc-change-string-case-action@0f907aad7e1932cef903341842b7798af30bc08c # v6
+      uses: chainguard-actions/aszc-change-string-case-action@3f677ffc09b9bb7e9981bcfe762687481afbb0e8 # v6
       with:
         string: ${{ inputs.image-name }}
     - name: Enforce lower-case dev image name
       id: dev-image-name
-      uses: chainguard-actions/aszc-change-string-case-action@0f907aad7e1932cef903341842b7798af30bc08c # v6
+      uses: chainguard-actions/aszc-change-string-case-action@3f677ffc09b9bb7e9981bcfe762687481afbb0e8 # v6
       with:
         string: ${{ inputs.dev-image-name }}
     - name: Enforce lower-case slim image name
       id: slim-image-name
-      uses: chainguard-actions/aszc-change-string-case-action@0f907aad7e1932cef903341842b7798af30bc08c # v6
+      uses: chainguard-actions/aszc-change-string-case-action@3f677ffc09b9bb7e9981bcfe762687481afbb0e8 # v6
       with:
         string: ${{ inputs.slim-image-name }}
     - name: Build images
