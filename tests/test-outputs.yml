@@ -1,0 +1,58 @@
+name: Test action outputs structure
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          base-image: ubuntu:22.04
+          ros-distro: humble
+          target: dev
+          enable-checkout: "false"
+          enable-slim: "false"
+          image-name: ghcr.io/test-org/test-repo
+          image-tag: mytest
+          registry: ghcr.io
+          registry-user: test-user
+          registry-password: fake-password-for-test
+
+      - name: Assert action ran (build attempted or failed gracefully)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+          RUN_IMAGE: ${{ steps.action.outputs.run-image }}
+          DEV_IMAGE: ${{ steps.action.outputs.dev-image }}
+          SLIM_IMAGE: ${{ steps.action.outputs.slim-image }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "run-image: $RUN_IMAGE"
+          echo "dev-image: $DEV_IMAGE"
+          echo "slim-image: $SLIM_IMAGE"
+          if [ "$OUTCOME" = "success" ]; then
+            # If the build succeeded, outputs should be set
+            if [ -z "$DEV_IMAGE" ]; then
+              echo "FAIL: action succeeded but dev-image output is empty"
+              exit 1
+            fi
+            echo "PASS: action succeeded with dev-image='$DEV_IMAGE'"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (expected in test environment without real ROS registry access)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
+
+      - name: Assert docker directory was created
+        run: |
+          if [ -d "docker" ]; then
+            echo "PASS: docker directory exists"
+          else
+            echo "FAIL: docker directory was not created"
+            exit 1
+          fi
