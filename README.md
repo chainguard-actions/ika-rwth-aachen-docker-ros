@@ -6,12 +6,12 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v1.10.0 | [`v1.10.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.10.0) | [`3a36758`](https://github.com/ika-rwth-aachen/docker-ros/commit/3a367585f79e0546bca11da83830ad4c49e9cec5) |
-| v1.11.0 | [`v1.11.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.11.0) | [`348504d`](https://github.com/ika-rwth-aachen/docker-ros/commit/348504dac5c8ff6a1d1c196ebf11276a93a16f30) |
-| v1.8.1 | [`v1.8.1`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.8.1) | [`4b5d421`](https://github.com/ika-rwth-aachen/docker-ros/commit/4b5d4211c0f849516f490218dbdcfd270c69dbaf) |
-| v1.9.0 | [`v1.9.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.9.0) | [`a62e418`](https://github.com/ika-rwth-aachen/docker-ros/commit/a62e418621a0391e133b9fcf01cc4b3717f3eec6) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v1.10.0 | [`v1.10.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.10.0) | [`3a36758`](https://github.com/ika-rwth-aachen/docker-ros/commit/3a367585f79e0546bca11da83830ad4c49e9cec5) | [`HARDENING.md`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/blob/v1.10.0/HARDENING.md) |
+| v1.11.0 | [`v1.11.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.11.0) | [`348504d`](https://github.com/ika-rwth-aachen/docker-ros/commit/348504dac5c8ff6a1d1c196ebf11276a93a16f30) | [`HARDENING.md`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/blob/v1.11.0/HARDENING.md) |
+| v1.8.1 | [`v1.8.1`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.8.1) | [`4b5d421`](https://github.com/ika-rwth-aachen/docker-ros/commit/4b5d4211c0f849516f490218dbdcfd270c69dbaf) | [`HARDENING.md`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/blob/v1.8.1/HARDENING.md) |
+| v1.9.0 | [`v1.9.0`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/tree/v1.9.0) | [`a62e418`](https://github.com/ika-rwth-aachen/docker-ros/commit/a62e418621a0391e133b9fcf01cc4b3717f3eec6) | [`HARDENING.md`](https://github.com/chainguard-actions/ika-rwth-aachen-docker-ros/blob/v1.9.0/HARDENING.md) |
 
 ## Privacy
 
