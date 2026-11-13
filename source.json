@@ -4,9 +4,8 @@
   "version": "v1.10.0",
   "commit_sha": "3a367585f79e0546bca11da83830ad4c49e9cec5",
   "url": "https://github.com/ika-rwth-aachen/docker-ros",
-  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
   "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
   "test_agent_version": "2",
-  "harden_agent_version": "2",
-  "dependency_fingerprint": "sha256:24e9ac412b10e0cef68552e5972f7691b83f14b8c0a1ad1e1c2edfed3a3d75f7"
+  "harden_agent_version": "2"
 }
