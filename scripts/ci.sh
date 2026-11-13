@@ -136,14 +136,11 @@ for PLATFORM in "${PLATFORMS[@]}"; do
         cd dist_linux*
         export DOCKER_API_VERSION="${DOCKER_API_VERSION:-$(docker version --format '{{.Server.APIVersion}}')}"
         docker pull "${image}"
-        _slim_build_args=()
-        if [[ -n "${SLIM_BUILD_ARGS}" ]]; then
-            read -r -d '' -a _slim_build_args <<< "${SLIM_BUILD_ARGS}" || true
-        fi
-        _additional_slim_build_args=()
-        if [[ -n "${ADDITIONAL_SLIM_BUILD_ARGS}" ]]; then
-            read -r -d '' -a _additional_slim_build_args <<< "${ADDITIONAL_SLIM_BUILD_ARGS}" || true
-        fi
+        # split and glob exactly like upstream's unquoted expansion (no evaluation of the value)
+        # shellcheck disable=SC2206
+        _slim_build_args=(${SLIM_BUILD_ARGS})
+        # shellcheck disable=SC2206
+        _additional_slim_build_args=(${ADDITIONAL_SLIM_BUILD_ARGS})
         ./mint slim --target "${image}" --tag "${slim_image}" "${_slim_build_args[@]}" "${_additional_slim_build_args[@]}"
         docker push "${slim_image}"
         cd -

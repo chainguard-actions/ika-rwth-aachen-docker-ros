@@ -219,7 +219,7 @@ runs:
       run: |
             if ! [[ -d "docker/docker-ros" ]]; then
               mkdir -p docker
-              cp -r ${GITHUB_ACTION_PATH} docker/docker-ros
+              cp -r "${GITHUB_ACTION_PATH}" docker/docker-ros
             fi
 
     - name: Prepare setup of QEMU
